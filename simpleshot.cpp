@@ -9,6 +9,7 @@ HWND hWnd;
 RECT selectedRect;
 bool isSelecting = false;
 POINT startPoint;
+HCURSOR hCursor;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void SaveToClipboard(HBITMAP hBitmap);
@@ -51,7 +52,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     if (!hWnd) {
         return FALSE;
     }
-
+    hCursor = LoadCursorFromFile(L"Cross.cur");
+    if (hCursor) {
+        SetCursor(hCursor);
+    }
+    
     ShowWindow(hWnd, nCmdShow);
     UpdateWindow(hWnd);
 
@@ -68,7 +73,21 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
     case WM_CREATE:
+        
         break;
+    case WM_SETCURSOR: {
+        if (LOWORD(lParam) == HTCLIENT && hCursor) {
+            SetCursor(hCursor);
+            return TRUE;
+        }
+        break;
+    }
+    case WM_KEYDOWN: {
+        if (wParam == VK_ESCAPE) {
+            PostQuitMessage(0);
+        }
+        break;
+    }
     case WM_LBUTTONDOWN:
         startPoint.x = LOWORD(lParam);
         startPoint.y = HIWORD(lParam);
@@ -108,6 +127,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         break;
     case WM_PAINT:
     {
+        hCursor = LoadCursorFromFile(L"Cross.cur");
+        if (hCursor) {
+            SetCursor(hCursor);
+        }
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hWnd, &ps);
         if (isSelecting) {
