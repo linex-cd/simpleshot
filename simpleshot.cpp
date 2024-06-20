@@ -1,6 +1,9 @@
-﻿#include <windows.h>
+﻿
+
+#include <windows.h>
 #include <gdiplus.h>
 #include <iostream>
+#include <VersionHelpers.h>
 
 #pragma comment(lib, "Gdiplus.lib")
 
@@ -15,13 +18,18 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void SaveToClipboard(HBITMAP hBitmap);
 HBITMAP CaptureScreenRect(const RECT& rect);
 void AdjustRectForDPI(RECT& rect, HWND hwnd);
+void UpdateDPI();
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
     _In_ LPWSTR lpCmdLine,
     _In_ int nCmdShow) {
 
-    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
+
+    UpdateDPI();
+ 
 
     Gdiplus::GdiplusStartupInput gdiplusStartupInput;
     ULONG_PTR gdiplusToken;
@@ -190,4 +198,47 @@ void AdjustRectForDPI(RECT& rect, HWND hwnd) {
     rect.right = static_cast<LONG>(rect.right * scalingFactorX);
     rect.top = static_cast<LONG>(rect.top * scalingFactorY);
     rect.bottom = static_cast<LONG>(rect.bottom * scalingFactorY);
+}
+
+void UpdateDPI()
+{
+
+    typedef HRESULT(WINAPI* SetProcessDpiAwarenessProc)(int);
+    typedef BOOL(WINAPI* SetProcessDpiAwarenessContextProc)(HANDLE);
+
+
+    HMODULE hUser32 = LoadLibraryA("user32.dll");
+    if (hUser32 == NULL) {
+        return;
+    }
+
+    SetProcessDpiAwarenessProc pSetProcessDpiAwareness = NULL;
+    SetProcessDpiAwarenessContextProc pSetProcessDpiAwarenessContext = NULL;
+
+    pSetProcessDpiAwareness = (SetProcessDpiAwarenessProc)GetProcAddress(hUser32, "SetProcessDpiAwareness");
+    if (pSetProcessDpiAwareness == NULL) {
+        //MessageBoxA(0, "SetProcessDpiAwareness not available\n", 0, 0);
+    }
+    else {
+       // MessageBoxA(0, "SetProcessDpiAwareness available\n", 0, 0);
+        // Use pSetProcessDpiAwareness function pointer here
+#define PROCESS_SYSTEM_DPI_AWARE 2
+        pSetProcessDpiAwareness(PROCESS_SYSTEM_DPI_AWARE);
+        
+    }
+
+    pSetProcessDpiAwarenessContext = (SetProcessDpiAwarenessContextProc)GetProcAddress(hUser32, "SetProcessDpiAwarenessContext");
+    if (pSetProcessDpiAwarenessContext == NULL) {
+        //MessageBoxA(0,"SetProcessDpiAwarenessContext not available\n",0,0);
+    }
+    else {
+        //MessageBoxA(0, "SetProcessDpiAwarenessContext available\n", 0, 0);
+        // Use pSetProcessDpiAwarenessContext function pointer here
+        pSetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+       
+    }
+
+
+    
+
 }
